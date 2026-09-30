@@ -11,9 +11,32 @@ Resources:
         - x86_64
       Handler: bootstrap
       CodeUri: .
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TasksTable
+      Environment:
+        Variables:
+          TASKS_TABLE_NAME: !Ref TasksTable
       Events:
-        Api:
+        GetTasks:
           Type: HttpApi
           Properties:
             Path: /tasks
             Method: GET
+        
+        CreateTask:
+          Type: HttpApi
+          Properties:
+            Path: /tasks
+            Method: POST
+      
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
