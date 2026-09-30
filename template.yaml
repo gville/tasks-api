@@ -11,3 +11,9 @@ Resources:
         - x86_64
       Handler: bootstrap
       CodeUri: .
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /tasks
+            Method: GET
