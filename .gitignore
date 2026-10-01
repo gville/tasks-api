@@ -19,3 +19,6 @@ vendor/
 
 # AWS Lambda
 bootstrap
+
+# AWS SAM
+.aws-sam/
