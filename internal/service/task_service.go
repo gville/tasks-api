@@ -49,3 +49,9 @@ func (s *TaskService) GetTask(
 ) (model.Task, error) {
 	return s.repository.GetTask(ctx, id)
 }
+
+func (s *TaskService) GetTasks(
+	ctx context.Context,
+) ([]model.Task, error) {
+	return s.repository.GetTasks(ctx)
+}

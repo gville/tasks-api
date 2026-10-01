@@ -21,7 +21,7 @@ Resources:
         GetTasks:
           Type: HttpApi
           Properties:
-            Path: /tasks/{id}
+            Path: /tasks
             Method: GET
         
         CreateTask:
@@ -29,6 +29,12 @@ Resources:
           Properties:
             Path: /tasks
             Method: POST
+        
+        GetTask:
+          Type: HttpApi
+          Properties:
+            Path: /tasks/{id}
+            Method: GET
       
   TasksTable:
     Type: AWS::DynamoDB::Table

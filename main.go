@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -31,37 +32,69 @@ func makeHandler(
 	) (events.APIGatewayV2HTTPResponse, error) {
 
 		switch request.RequestContext.HTTP.Method {
-		case "GET":
+		case http.MethodGet:
 			id := request.PathParameters["id"]
 
-			task, err := taskService.GetTask(
-				ctx,
-				id,
-			)
-			if err != nil {
-				return events.APIGatewayV2HTTPResponse{}, err
+			if id != "" {
+				task, err := taskService.GetTask(
+					ctx,
+					id,
+				)
+				if err != nil {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusInternalServerError,
+						Body:       `{"message":"Internal Server Error"}`,
+					}, nil
+				}
+
+				body, err := json.Marshal(task)
+				if err != nil {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusInternalServerError,
+						Body:       `{"message":"Internal Server Error"}`,
+					}, nil
+				}
+
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusOK,
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: string(body),
+				}, nil
 			}
 
-			body, err := json.Marshal(task)
+			tasks, err := taskService.GetTasks(ctx)
 			if err != nil {
-				return events.APIGatewayV2HTTPResponse{}, err
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
+			}
+
+			body, err := json.Marshal(tasks)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
 			}
 
 			return events.APIGatewayV2HTTPResponse{
-				StatusCode: 200,
+				StatusCode: http.StatusOK,
 				Headers: map[string]string{
 					"Content-Type": "application/json",
 				},
 				Body: string(body),
 			}, nil
 
-		case "POST":
+		case http.MethodPost:
 			var input CreateTaskRequest
 
 			err := json.Unmarshal([]byte(request.Body), &input)
 			if err != nil {
 				return events.APIGatewayV2HTTPResponse{
-					StatusCode: 400,
+					StatusCode: http.StatusBadRequest,
 					Headers: map[string]string{
 						"Content-Type": "application/json",
 					},
@@ -84,7 +117,7 @@ func makeHandler(
 			}
 
 			return events.APIGatewayV2HTTPResponse{
-				StatusCode: 200,
+				StatusCode: http.StatusOK,
 				Headers: map[string]string{
 					"Content-Type": "application/json",
 				},
@@ -93,7 +126,7 @@ func makeHandler(
 		}
 
 		return events.APIGatewayV2HTTPResponse{
-			StatusCode: 405,
+			StatusCode: http.StatusMethodNotAllowed,
 			Body:       `{"message":"Method not allowed"}`,
 		}, nil
 	}

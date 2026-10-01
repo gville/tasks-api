@@ -22,3 +22,5 @@ bootstrap
 
 # AWS SAM
 .aws-sam/
+
+env.json

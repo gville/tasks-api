@@ -76,3 +76,29 @@ func (r *TaskRepository) GetTask(
 
 	return task, nil
 }
+
+func (r *TaskRepository) GetTasks(
+	ctx context.Context,
+) ([]model.Task, error) {
+	result, err := r.client.Scan(
+		ctx,
+		&dynamodb.ScanInput{
+			TableName: &r.tableName,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var tasks []model.Task
+
+	err = attributevalue.UnmarshalListOfMaps(
+		result.Items,
+		&tasks,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
