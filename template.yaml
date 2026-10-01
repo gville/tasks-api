@@ -21,7 +21,7 @@ Resources:
         GetTasks:
           Type: HttpApi
           Properties:
-            Path: /tasks
+            Path: /tasks/{id}
             Method: GET
         
         CreateTask:

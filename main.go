@@ -32,12 +32,27 @@ func makeHandler(
 
 		switch request.RequestContext.HTTP.Method {
 		case "GET":
+			id := request.PathParameters["id"]
+
+			task, err := taskService.GetTask(
+				ctx,
+				id,
+			)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{}, err
+			}
+
+			body, err := json.Marshal(task)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{}, err
+			}
+
 			return events.APIGatewayV2HTTPResponse{
 				StatusCode: 200,
 				Headers: map[string]string{
 					"Content-Type": "application/json",
 				},
-				Body: `{"message":"GET /tasks"}`,
+				Body: string(body),
 			}, nil
 
 		case "POST":

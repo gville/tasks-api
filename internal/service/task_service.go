@@ -42,3 +42,10 @@ func (s *TaskService) CreateTask(
 
 	return task, nil
 }
+
+func (s *TaskService) GetTask(
+	ctx context.Context,
+	id string,
+) (model.Task, error) {
+	return s.repository.GetTask(ctx, id)
+}

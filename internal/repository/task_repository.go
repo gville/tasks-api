@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 
 	"tasks-api/internal/model"
 )
@@ -42,4 +43,36 @@ func (r *TaskRepository) CreateTask(
 	)
 
 	return err
+}
+
+func (r *TaskRepository) GetTask(
+	ctx context.Context,
+	id string,
+) (model.Task, error) {
+	result, err := r.client.GetItem(
+		ctx,
+		&dynamodb.GetItemInput{
+			TableName: &r.tableName,
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{
+					Value: id,
+				},
+			},
+		},
+	)
+	if err != nil {
+		return model.Task{}, err
+	}
+
+	var task model.Task
+
+	err = attributevalue.UnmarshalMap(
+		result.Item,
+		&task,
+	)
+	if err != nil {
+		return model.Task{}, err
+	}
+
+	return task, nil
 }
