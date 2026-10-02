@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
+	"tasks-api/internal/model"
 	"tasks-api/internal/repository"
 	"tasks-api/internal/service"
 )
@@ -18,6 +19,12 @@ import (
 type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
+}
+
+type UpdateTaskRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Completed   bool   `json:"completed"`
 }
 
 func makeHandler(
@@ -114,6 +121,56 @@ func makeHandler(
 			body, err := json.Marshal(task)
 			if err != nil {
 				return events.APIGatewayV2HTTPResponse{}, err
+			}
+
+			return events.APIGatewayV2HTTPResponse{
+				StatusCode: http.StatusOK,
+				Headers: map[string]string{
+					"Content-Type": "application/json",
+				},
+				Body: string(body),
+			}, nil
+
+		case http.MethodPut:
+			id := request.PathParameters["id"]
+
+			var input UpdateTaskRequest
+
+			err := json.Unmarshal([]byte(request.Body), &input)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusBadRequest,
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: `{"message":"Invalid JSON"}`,
+				}, nil
+			}
+
+			task := model.Task{
+				ID:          id,
+				Title:       input.Title,
+				Description: input.Description,
+				Completed:   input.Completed,
+			}
+
+			err = taskService.UpdateTask(
+				ctx,
+				task,
+			)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
+			}
+
+			body, err := json.Marshal(task)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
 			}
 
 			return events.APIGatewayV2HTTPResponse{

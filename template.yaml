@@ -35,6 +35,12 @@ Resources:
           Properties:
             Path: /tasks/{id}
             Method: GET
+        
+        UpdateTask:
+          Type: HttpApi
+          Properties:
+            Path: /tasks/{id}
+            Method: PUT
       
   TasksTable:
     Type: AWS::DynamoDB::Table

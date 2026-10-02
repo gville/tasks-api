@@ -55,3 +55,10 @@ func (s *TaskService) GetTasks(
 ) ([]model.Task, error) {
 	return s.repository.GetTasks(ctx)
 }
+
+func (s *TaskService) UpdateTask(
+	ctx context.Context,
+	task model.Task,
+) error {
+	return s.repository.UpdateTask(ctx, task)
+}
