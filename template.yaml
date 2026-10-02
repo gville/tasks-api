@@ -41,6 +41,12 @@ Resources:
           Properties:
             Path: /tasks/{id}
             Method: PUT
+        
+        DeleteTask:
+          Type: HttpApi
+          Properties:
+            Path: /tasks/{id}
+            Method: DELETE
       
   TasksTable:
     Type: AWS::DynamoDB::Table

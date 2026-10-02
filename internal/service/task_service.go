@@ -62,3 +62,10 @@ func (s *TaskService) UpdateTask(
 ) error {
 	return s.repository.UpdateTask(ctx, task)
 }
+
+func (s *TaskService) DeleteTask(
+	ctx context.Context,
+	id string,
+) error {
+	return s.repository.DeleteTask(ctx, id)
+}

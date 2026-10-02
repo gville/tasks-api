@@ -180,6 +180,24 @@ func makeHandler(
 				},
 				Body: string(body),
 			}, nil
+
+		case http.MethodDelete:
+			id := request.PathParameters["id"]
+
+			err := taskService.DeleteTask(
+				ctx,
+				id,
+			)
+			if err != nil {
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
+			}
+
+			return events.APIGatewayV2HTTPResponse{
+				StatusCode: http.StatusNoContent,
+			}, nil
 		}
 
 		return events.APIGatewayV2HTTPResponse{

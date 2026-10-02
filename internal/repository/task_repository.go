@@ -141,3 +141,22 @@ func (r *TaskRepository) UpdateTask(
 
 	return err
 }
+
+func (r *TaskRepository) DeleteTask(
+	ctx context.Context,
+	id string,
+) error {
+	_, err := r.client.DeleteItem(
+		ctx,
+		&dynamodb.DeleteItemInput{
+			TableName: &r.tableName,
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{
+					Value: id,
+				},
+			},
+		},
+	)
+
+	return err
+}
