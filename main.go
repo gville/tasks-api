@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 
@@ -48,6 +49,13 @@ func makeHandler(
 					id,
 				)
 				if err != nil {
+					if errors.Is(err, repository.ErrTaskNotFound) {
+						return events.APIGatewayV2HTTPResponse{
+							StatusCode: http.StatusNotFound,
+							Body:       `{"message":"Task not found"}`,
+						}, nil
+					}
+
 					return events.APIGatewayV2HTTPResponse{
 						StatusCode: http.StatusInternalServerError,
 						Body:       `{"message":"Internal Server Error"}`,
@@ -159,6 +167,13 @@ func makeHandler(
 				task,
 			)
 			if err != nil {
+				if errors.Is(err, repository.ErrTaskNotFound) {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusNotFound,
+						Body:       `{"message":"Task not found"}`,
+					}, nil
+				}
+
 				return events.APIGatewayV2HTTPResponse{
 					StatusCode: http.StatusInternalServerError,
 					Body:       `{"message":"Internal Server Error"}`,
@@ -189,6 +204,13 @@ func makeHandler(
 				id,
 			)
 			if err != nil {
+				if errors.Is(err, repository.ErrTaskNotFound) {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusNotFound,
+						Body:       `{"message":"Task not found"}`,
+					}, nil
+				}
+
 				return events.APIGatewayV2HTTPResponse{
 					StatusCode: http.StatusInternalServerError,
 					Body:       `{"message":"Internal Server Error"}`,

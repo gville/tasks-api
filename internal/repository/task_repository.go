@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -10,6 +11,8 @@ import (
 
 	"tasks-api/internal/model"
 )
+
+var ErrTaskNotFound = errors.New("task not found")
 
 type TaskRepository struct {
 	client    *dynamodb.Client
@@ -65,6 +68,10 @@ func (r *TaskRepository) GetTask(
 		return model.Task{}, err
 	}
 
+	if len(result.Item) == 0 {
+		return model.Task{}, ErrTaskNotFound
+	}
+
 	var task model.Task
 
 	err = attributevalue.UnmarshalMap(
@@ -117,6 +124,9 @@ func (r *TaskRepository) UpdateTask(
 					Value: task.ID,
 				},
 			},
+			ConditionExpression: aws.String(
+				"attribute_exists(id)",
+			),
 			UpdateExpression: aws.String(
 				"SET #title = :title, #description = :description, #completed = :completed",
 			),
@@ -139,7 +149,17 @@ func (r *TaskRepository) UpdateTask(
 		},
 	)
 
-	return err
+	if err != nil {
+		var conditionalCheckFailed *types.ConditionalCheckFailedException
+
+		if errors.As(err, &conditionalCheckFailed) {
+			return ErrTaskNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (r *TaskRepository) DeleteTask(
@@ -155,8 +175,21 @@ func (r *TaskRepository) DeleteTask(
 					Value: id,
 				},
 			},
+			ConditionExpression: aws.String(
+				"attribute_exists(id)",
+			),
 		},
 	)
 
-	return err
+	if err != nil {
+		var conditionalCheckFailed *types.ConditionalCheckFailedException
+
+		if errors.As(err, &conditionalCheckFailed) {
+			return ErrTaskNotFound
+		}
+
+		return err
+	}
+
+	return nil
 }
