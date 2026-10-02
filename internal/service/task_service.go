@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
+	"strings"
 	"time"
 
 	"tasks-api/internal/model"
@@ -10,6 +12,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 )
+
+var ErrInvalidTask = errors.New("invalid task")
 
 type TaskService struct {
 	repository *repository.TaskRepository
@@ -26,6 +30,10 @@ func (s *TaskService) CreateTask(
 	title string,
 	description string,
 ) (model.Task, error) {
+	if strings.TrimSpace(title) == "" {
+		return model.Task{}, ErrInvalidTask
+	}
+
 	id := ulid.MustNew(ulid.Timestamp(time.Now()), rand.Reader)
 
 	task := model.Task{
@@ -60,6 +68,10 @@ func (s *TaskService) UpdateTask(
 	ctx context.Context,
 	task model.Task,
 ) error {
+	if strings.TrimSpace(task.Title) == "" {
+		return ErrInvalidTask
+	}
+
 	return s.repository.UpdateTask(ctx, task)
 }
 

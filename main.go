@@ -123,7 +123,20 @@ func makeHandler(
 				input.Description,
 			)
 			if err != nil {
-				return events.APIGatewayV2HTTPResponse{}, err
+				if errors.Is(err, service.ErrInvalidTask) {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusBadRequest,
+						Headers: map[string]string{
+							"Content-Type": "application/json",
+						},
+						Body: `{"message":"Invalid task"}`,
+					}, nil
+				}
+
+				return events.APIGatewayV2HTTPResponse{
+					StatusCode: http.StatusInternalServerError,
+					Body:       `{"message":"Internal Server Error"}`,
+				}, nil
 			}
 
 			body, err := json.Marshal(task)
@@ -132,9 +145,10 @@ func makeHandler(
 			}
 
 			return events.APIGatewayV2HTTPResponse{
-				StatusCode: http.StatusOK,
+				StatusCode: http.StatusCreated,
 				Headers: map[string]string{
 					"Content-Type": "application/json",
+					"Location":     "/tasks/" + task.ID,
 				},
 				Body: string(body),
 			}, nil
@@ -171,6 +185,16 @@ func makeHandler(
 					return events.APIGatewayV2HTTPResponse{
 						StatusCode: http.StatusNotFound,
 						Body:       `{"message":"Task not found"}`,
+					}, nil
+				}
+
+				if errors.Is(err, service.ErrInvalidTask) {
+					return events.APIGatewayV2HTTPResponse{
+						StatusCode: http.StatusBadRequest,
+						Headers: map[string]string{
+							"Content-Type": "application/json",
+						},
+						Body: `{"message":"Invalid task"}`,
 					}, nil
 				}
 
