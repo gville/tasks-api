@@ -8,18 +8,43 @@ import (
 	"time"
 
 	"tasks-api/internal/model"
-	"tasks-api/internal/repository"
 
 	"github.com/oklog/ulid/v2"
 )
 
 var ErrInvalidTask = errors.New("invalid task")
 
-type TaskService struct {
-	repository *repository.TaskRepository
+type TaskRepository interface {
+	CreateTask(
+		ctx context.Context,
+		task model.Task,
+	) error
+
+	GetTask(
+		ctx context.Context,
+		id string,
+	) (model.Task, error)
+
+	GetTasks(
+		ctx context.Context,
+	) ([]model.Task, error)
+
+	UpdateTask(
+		ctx context.Context,
+		task model.Task,
+	) error
+
+	DeleteTask(
+		ctx context.Context,
+		id string,
+	) error
 }
 
-func NewTaskService(repository *repository.TaskRepository) *TaskService {
+type TaskService struct {
+	repository TaskRepository
+}
+
+func NewTaskService(repository TaskRepository) *TaskService {
 	return &TaskService{
 		repository: repository,
 	}
