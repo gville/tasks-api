@@ -17,6 +17,33 @@ import (
 	"tasks-api/internal/service"
 )
 
+type TaskService interface {
+	CreateTask(
+		ctx context.Context,
+		title string,
+		description string,
+	) (model.Task, error)
+
+	GetTask(
+		ctx context.Context,
+		id string,
+	) (model.Task, error)
+
+	GetTasks(
+		ctx context.Context,
+	) ([]model.Task, error)
+
+	UpdateTask(
+		ctx context.Context,
+		task model.Task,
+	) error
+
+	DeleteTask(
+		ctx context.Context,
+		id string,
+	) error
+}
+
 type CreateTaskRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -29,7 +56,7 @@ type UpdateTaskRequest struct {
 }
 
 func makeHandler(
-	taskService *service.TaskService,
+	taskService TaskService,
 ) func(
 	context.Context,
 	events.APIGatewayV2HTTPRequest,
