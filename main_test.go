@@ -559,8 +559,6 @@ func TestUpdateTask(t *testing.T) {
 		}`,
 	}
 
-	taskService.updateError = nil
-
 	response, err := handler(context.Background(), request)
 
 	if err != nil {
