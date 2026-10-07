@@ -31,5 +31,5 @@ func main() {
 
 	taskHandler := handler.NewHandler(taskService)
 
-	lambda.Start(taskHandler)
+	lambda.Start(taskHandler.Handle)
 }

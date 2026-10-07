@@ -86,7 +86,7 @@ func TestCreateTaskInvalidJSON(t *testing.T) {
 		Body: `{"title":`,
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -138,7 +138,7 @@ func TestCreateTask(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -224,7 +224,7 @@ func TestCreateTaskInvalidTask(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -275,7 +275,7 @@ func TestGetTask(t *testing.T) {
 		},
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -344,7 +344,7 @@ func TestGetTaskNotFound(t *testing.T) {
 		},
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -388,7 +388,7 @@ func TestGetTaskInternalServerError(t *testing.T) {
 		},
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -444,7 +444,7 @@ func TestGetTasks(t *testing.T) {
 		},
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -512,7 +512,7 @@ func TestGetTasksInternalServerError(t *testing.T) {
 		},
 	}
 
-	response, err := handler(
+	response, err := handler.Handle(
 		context.Background(),
 		request,
 	)
@@ -559,7 +559,7 @@ func TestUpdateTask(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -625,7 +625,7 @@ func TestUpdateTaskInvalidJSON(t *testing.T) {
 		Body: `{"title":`,
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -663,7 +663,7 @@ func TestUpdateTaskInvalidTask(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -701,7 +701,7 @@ func TestUpdateTaskNotFound(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -739,7 +739,7 @@ func TestUpdateTaskInternalServerError(t *testing.T) {
 		}`,
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -770,7 +770,7 @@ func TestDeleteTask(t *testing.T) {
 		},
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -811,7 +811,7 @@ func TestDeleteTaskNotFound(t *testing.T) {
 		},
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -844,7 +844,7 @@ func TestDeleteTaskInternalServerError(t *testing.T) {
 		},
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -872,7 +872,7 @@ func TestMethodNotAllowed(t *testing.T) {
 		},
 	}
 
-	response, err := handler(context.Background(), request)
+	response, err := handler.Handle(context.Background(), request)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
