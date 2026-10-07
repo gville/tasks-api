@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"context"
@@ -75,7 +75,7 @@ func (m *mockTaskService) DeleteTask(
 
 func TestCreateTaskInvalidJSON(t *testing.T) {
 	taskService := &mockTaskService{}
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -124,7 +124,7 @@ func TestCreateTask(t *testing.T) {
 		createdTask: task,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -210,7 +210,7 @@ func TestCreateTaskInvalidTask(t *testing.T) {
 		createError: service.ErrInvalidTask,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -262,7 +262,7 @@ func TestGetTask(t *testing.T) {
 		task: task,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -331,7 +331,7 @@ func TestGetTaskNotFound(t *testing.T) {
 		getError: repository.ErrTaskNotFound,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -375,7 +375,7 @@ func TestGetTaskInternalServerError(t *testing.T) {
 		getError: errors.New("database error"),
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -434,7 +434,7 @@ func TestGetTasks(t *testing.T) {
 		tasks: tasks,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -502,7 +502,7 @@ func TestGetTasksInternalServerError(t *testing.T) {
 		getTasksError: errors.New("database error"),
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -541,7 +541,7 @@ func TestGetTasksInternalServerError(t *testing.T) {
 func TestUpdateTask(t *testing.T) {
 	taskService := &mockTaskService{}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -611,7 +611,7 @@ func TestUpdateTask(t *testing.T) {
 func TestUpdateTaskInvalidJSON(t *testing.T) {
 	taskService := &mockTaskService{}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -645,7 +645,7 @@ func TestUpdateTaskInvalidTask(t *testing.T) {
 		updateError: service.ErrInvalidTask,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -683,7 +683,7 @@ func TestUpdateTaskNotFound(t *testing.T) {
 		updateError: repository.ErrTaskNotFound,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -721,7 +721,7 @@ func TestUpdateTaskInternalServerError(t *testing.T) {
 		updateError: errors.New("database error"),
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -757,7 +757,7 @@ func TestUpdateTaskInternalServerError(t *testing.T) {
 func TestDeleteTask(t *testing.T) {
 	taskService := &mockTaskService{}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -798,7 +798,7 @@ func TestDeleteTaskNotFound(t *testing.T) {
 		deleteError: repository.ErrTaskNotFound,
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -831,7 +831,7 @@ func TestDeleteTaskInternalServerError(t *testing.T) {
 		deleteError: errors.New("database error"),
 	}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
@@ -862,7 +862,7 @@ func TestDeleteTaskInternalServerError(t *testing.T) {
 func TestMethodNotAllowed(t *testing.T) {
 	taskService := &mockTaskService{}
 
-	handler := makeHandler(taskService)
+	handler := NewHandler(taskService)
 
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{

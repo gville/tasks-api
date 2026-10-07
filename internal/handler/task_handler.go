@@ -1,20 +1,15 @@
-package main
+package handler
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-
 	"tasks-api/internal/model"
 	"tasks-api/internal/repository"
 	"tasks-api/internal/service"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
 type TaskService interface {
@@ -55,7 +50,7 @@ type UpdateTaskRequest struct {
 	Completed   bool   `json:"completed"`
 }
 
-func makeHandler(
+func NewHandler(
 	taskService TaskService,
 ) func(
 	context.Context,
@@ -278,25 +273,4 @@ func makeHandler(
 			Body:       `{"message":"Method not allowed"}`,
 		}, nil
 	}
-}
-
-func main() {
-	cfg, err := config.LoadDefaultConfig(context.Background())
-	if err != nil {
-		panic(err)
-	}
-
-	client := dynamodb.NewFromConfig(cfg)
-
-	tableName := os.Getenv("TASKS_TABLE_NAME")
-
-	taskRepository := repository.NewTaskRepository(
-		client,
-		tableName,
-	)
-	taskService := service.NewTaskService(taskRepository)
-
-	handler := makeHandler(taskService)
-
-	lambda.Start(handler)
 }
