@@ -58,3 +58,8 @@ Resources:
       KeySchema:
         - AttributeName: id
           KeyType: HASH
+
+Outputs:
+  TasksTableName:
+    Description: DynamoDB table name
+    Value: !Ref TasksTable
