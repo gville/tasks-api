@@ -1,6 +1,21 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Globals:
+  HttpApi:
+    Auth:
+      DefaultAuthorizer: CognitoAuthorizer
+      Authorizers:
+        CognitoAuthorizer:
+          IdentitySource: "$request.header.Authorization"
+          JwtConfiguration:
+            issuer: "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_6kOoJLw7f"
+            audience:
+              - "3lefbjuklks9bbd9m3k0piclg3"
+    DefaultRouteSettings:
+      ThrottlingBurstLimit: 10
+      ThrottlingRateLimit: 5
+
 Resources:
 
   TasksFunction:
