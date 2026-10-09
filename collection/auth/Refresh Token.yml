@@ -1,0 +1,31 @@
+info:
+  name: Refresh Token
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: https://cognito-idp.us-east-2.amazonaws.com/
+  headers:
+    - name: Content-Type
+      value: application/x-amz-json-1.1
+    - name: X-Amz-Target
+      value: AWSCognitoIdentityProviderService.InitiateAuth
+  body:
+    type: json
+    data: |-
+      {
+        "AuthFlow": "REFRESH_TOKEN_AUTH",
+        "ClientId": "{{clientId}}",
+        "AuthParameters": {
+          "REFRESH_TOKEN": "{{refreshToken}}"
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

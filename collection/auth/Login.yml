@@ -1,0 +1,38 @@
+info:
+  name: Login
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: https://cognito-idp.us-east-2.amazonaws.com/
+  headers:
+    - name: Content-Type
+      value: application/x-amz-json-1.1
+    - name: X-Amz-Target
+      value: AWSCognitoIdentityProviderService.InitiateAuth
+  body:
+    type: json
+    data: |-
+      {
+        "AuthFlow": "USER_PASSWORD_AUTH",
+        "ClientId": "3lefbjuklks9bbd9m3k0piclg3",
+        "AuthParameters": {
+          "USERNAME": "{{username}}",
+          "PASSWORD": "{{password}}"
+        }
+      }
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("accessToken",res.body.AuthenticationResult.AccessToken)
+        bru.setVar("refreshToken",res.body.AuthenticationResult.RefreshToken)
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

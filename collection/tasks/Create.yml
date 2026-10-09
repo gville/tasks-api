@@ -1,0 +1,23 @@
+info:
+  name: Create
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/tasks"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Aprender Bruno",
+        "description": "Configurar la colección de requests para tasks-api"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

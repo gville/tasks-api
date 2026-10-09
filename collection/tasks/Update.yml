@@ -1,0 +1,27 @@
+info:
+  name: Update
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/tasks/:id"
+  params:
+    - name: id
+      value: 01M3Z09VJ32CKJATNGNR2M2BW4
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Aprender Bruno",
+        "description": "Colección de requests actualizada"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
