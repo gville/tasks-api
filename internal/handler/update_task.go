@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -59,6 +60,13 @@ func (h *Handler) updateTask(
 			}, nil
 		}
 
+		log.Printf(
+			"ERROR operation=UpdateTask requestId=%s taskId=%s error=%v",
+			request.RequestContext.RequestID,
+			id,
+			err,
+		)
+
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       `{"message":"Internal Server Error"}`,
@@ -67,6 +75,13 @@ func (h *Handler) updateTask(
 
 	body, err := json.Marshal(task)
 	if err != nil {
+		log.Printf(
+			"ERROR operation=UpdateTask requestId=%s taskId=%s error=failed_to_marshal_response details=%v",
+			request.RequestContext.RequestID,
+			id,
+			err,
+		)
+
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       `{"message":"Internal Server Error"}`,

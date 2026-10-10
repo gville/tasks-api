@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -25,6 +26,12 @@ func (h *Handler) deleteTask(
 				Body:       `{"message":"Task not found"}`,
 			}, nil
 		}
+
+		log.Printf(
+			"ERROR operation=DeleteTask requestId=%s error=%v",
+			request.RequestContext.RequestID,
+			err,
+		)
 
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,

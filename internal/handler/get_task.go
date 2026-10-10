@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -26,6 +27,12 @@ func (h *Handler) getTask(
 				Body:       `{"message":"Task not found"}`,
 			}, nil
 		}
+
+		log.Printf(
+			"ERROR operation=GetTask requestId=%s error=%v",
+			request.RequestContext.RequestID,
+			err,
+		)
 
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,

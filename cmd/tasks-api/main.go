@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -16,12 +17,15 @@ import (
 func main() {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		panic(err)
+		log.Fatalf("ERROR operation=LoadAWSConfig error=%v", err)
+	}
+
+	tableName := os.Getenv("TASKS_TABLE_NAME")
+	if tableName == "" {
+		log.Fatal("ERROR operation=Initialize error=TASKS_TABLE_NAME_not_configured")
 	}
 
 	client := dynamodb.NewFromConfig(cfg)
-
-	tableName := os.Getenv("TASKS_TABLE_NAME")
 
 	taskRepository := repository.NewTaskRepository(
 		client,
