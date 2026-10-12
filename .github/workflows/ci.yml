@@ -35,3 +35,6 @@ jobs:
 
       - name: Build application
         run: make build
+        env:
+          AWS_PROFILE: ""
+          SAM_CLI_TELEMETRY: "0"
