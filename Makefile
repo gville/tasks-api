@@ -1,4 +1,4 @@
-export AWS_PROFILE ?= process
+AWS_PROFILE ?= process
 
 .PHONY: build test deploy local
 
