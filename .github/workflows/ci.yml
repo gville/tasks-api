@@ -19,6 +19,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Inspect GitHub OIDC claims
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Ref: $GITHUB_REF"
+          echo "Repository ID: $GITHUB_REPOSITORY_ID"
+          echo "Repository owner ID: $GITHUB_REPOSITORY_OWNER_ID"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
