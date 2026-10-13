@@ -19,16 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::524547833731:role/GitHubActionsTasksApiRole
-          aws-region: us-east-2
-
-      - name: Verify AWS identity
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: aws sts get-caller-identity
+      - name: Debug workflow context
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Starting AWS authentication test"
 
       - name: Set up Go
         uses: actions/setup-go@v5
