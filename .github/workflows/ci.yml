@@ -52,6 +52,6 @@ jobs:
 
       - name: Create deployment change set
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: sam deploy --no-execute-changeset
+        run: sam deploy --no-confirm-changeset
         env:
           SAM_CLI_TELEMETRY: "0"
