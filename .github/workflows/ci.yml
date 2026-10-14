@@ -49,3 +49,9 @@ jobs:
         run: make build
         env:
           SAM_CLI_TELEMETRY: "0"
+
+      - name: Create deployment change set
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: sam deploy --no-execute-changeset
+        env:
+          SAM_CLI_TELEMETRY: "0"
