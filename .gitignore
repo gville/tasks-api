@@ -11,6 +11,9 @@
 # Output of the go build command
 *.out
 
+# Logs
+*.log
+
 # Dependency directories
 vendor/
 
@@ -24,3 +27,8 @@ bootstrap
 .aws-sam/
 
 env.json
+
+# AI tool configs (local only; regenerate with `openspec update`)
+.opencode/
+.claude/
+.kiro/
