@@ -138,7 +138,7 @@ Resources:
             Resource: arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole
             Condition:
               StringEquals:
-                cloudformation:RoleARN: arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole
+                iam:PassedToService: cloudformation.amazonaws.com
           - Sid: CallerIdentity
             Effect: Allow
             Action: sts:GetCallerIdentity

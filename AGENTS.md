@@ -51,9 +51,11 @@ aws cloudformation describe-stacks --stack-name tasks-api \
 
 ## Deployment
 
-Deploys run through a least-privilege CloudFormation service role, configured as `role_arn` in `samconfig.toml` so local and CI runs behave identically. The CI role (`GitHubActionsTasksApiRole`) holds only the scoped `TasksApiCiDeployPolicy`; it no longer uses `PowerUserAccess`.
+Deployments use a least-privilege CloudFormation service role, configured through `role_arn` in `samconfig.toml` for local SAM deployments. The GitHub Actions role (`GitHubActionsTasksApiRole`) uses the scoped `TasksApiCiDeployPolicy` instead of `PowerUserAccess`.
 
-The deploy identities are defined in `infra/ci/template.yaml`, a bootstrap stack kept separate from the application stack (the service role cannot be created by the stack it operates). Deploy it once with an administrator profile:
+The deployment identities are defined in `infra/ci/template.yaml`, a bootstrap stack kept separate from the application stack because the service role must exist before it can operate that stack.
+
+The bootstrap stack is deployed separately by an authorized administrator:
 
 ```
 aws cloudformation deploy --stack-name tasks-api-ci \
@@ -61,7 +63,7 @@ aws cloudformation deploy --stack-name tasks-api-ci \
   --capabilities CAPABILITY_NAMED_IAM --region us-east-2
 ```
 
-Then attach the emitted `TasksApiCiDeployPolicy` to `GitHubActionsTasksApiRole` and detach `PowerUserAccess`. The GitHub OIDC provider and the SAM-managed artifact bucket (`aws-sam-cli-managed-default-*`) are also bootstrap and are not self-healing; recreate them by hand if lost.
+The template creates the CloudFormation service role and the managed CI deploy policy. The GitHub Actions role and its trust relationship must be configured separately. The GitHub OIDC provider and the SAM-managed artifact bucket (`aws-sam-cli-managed-default-*`) are also bootstrap dependencies and are not automatically recreated if deleted.
 
 ## Environment
 
