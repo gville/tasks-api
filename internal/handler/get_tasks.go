@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
+
+	"tasks-api/internal/model"
 )
 
 func (h *Handler) getTasks(
@@ -26,6 +28,10 @@ func (h *Handler) getTasks(
 			StatusCode: http.StatusInternalServerError,
 			Body:       `{"message":"Internal Server Error"}`,
 		}, nil
+	}
+
+	if tasks == nil {
+		tasks = []model.Task{}
 	}
 
 	body, err := json.Marshal(tasks)
