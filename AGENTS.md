@@ -23,6 +23,7 @@ internal/service/         business logic: validation, ULID generation
 internal/repository/      DynamoDB access
 internal/model/           Task domain type
 template.yaml             AWS SAM template
+infra/ci/template.yaml    deployment identities: CFN service role + CI deploy policy
 collection/               Bruno API collection
 ```
 
@@ -47,6 +48,20 @@ Resolve the table name from the stack output:
 aws cloudformation describe-stacks --stack-name tasks-api \
   --query "Stacks[0].Outputs[?OutputKey=='TasksTableName'].OutputValue" --output text
 ```
+
+## Deployment
+
+Deploys run through a least-privilege CloudFormation service role, configured as `role_arn` in `samconfig.toml` so local and CI runs behave identically. The CI role (`GitHubActionsTasksApiRole`) holds only the scoped `TasksApiCiDeployPolicy`; it no longer uses `PowerUserAccess`.
+
+The deploy identities are defined in `infra/ci/template.yaml`, a bootstrap stack kept separate from the application stack (the service role cannot be created by the stack it operates). Deploy it once with an administrator profile:
+
+```
+aws cloudformation deploy --stack-name tasks-api-ci \
+  --template-file infra/ci/template.yaml \
+  --capabilities CAPABILITY_NAMED_IAM --region us-east-2
+```
+
+Then attach the emitted `TasksApiCiDeployPolicy` to `GitHubActionsTasksApiRole` and detach `PowerUserAccess`. The GitHub OIDC provider and the SAM-managed artifact bucket (`aws-sam-cli-managed-default-*`) are also bootstrap and are not self-healing; recreate them by hand if lost.
 
 ## Environment
 

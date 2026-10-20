@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Bootstrap stack for tasks-api deployment identities. Deployed once by a human
+  administrator, separate from the application stack. Defines the CloudFormation
+  service role that operates the application stack and the least-privilege policy
+  for the GitHub Actions deploy role.
+
+Resources:
+
+  TasksApiCloudFormationServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: TasksApiCloudFormationServiceRole
+      Description: CloudFormation service role for the tasks-api application stack
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: TasksApiCloudFormationServiceRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ApiGatewayV2
+                Effect: Allow
+                Action:
+                  - apigatewayv2:CreateApi
+                  - apigatewayv2:UpdateApi
+                  - apigatewayv2:GetApi
+                  - apigatewayv2:DeleteApi
+                  - apigatewayv2:CreateStage
+                  - apigatewayv2:UpdateStage
+                  - apigatewayv2:GetStage
+                  - apigatewayv2:DeleteStage
+                  - apigatewayv2:TagResource
+                  - apigatewayv2:UntagResource
+                Resource:
+                  - arn:aws:apigateway:us-east-2::/apis/3547pxd431
+                  - arn:aws:apigateway:us-east-2::/apis/3547pxd431/stages/*
+              - Sid: Lambda
+                Effect: Allow
+                Action:
+                  - lambda:CreateFunction
+                  - lambda:UpdateFunctionCode
+                  - lambda:UpdateFunctionConfiguration
+                  - lambda:GetFunction
+                  - lambda:GetFunctionConfiguration
+                  - lambda:DeleteFunction
+                  - lambda:ListVersionsByFunction
+                  - lambda:AddPermission
+                  - lambda:RemovePermission
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                Resource: arn:aws:lambda:us-east-2:524547833731:function:tasks-api-TasksFunction-woOv7SWZ5JEV
+              - Sid: DynamoDB
+                Effect: Allow
+                Action:
+                  - dynamodb:CreateTable
+                  - dynamodb:UpdateTable
+                  - dynamodb:DeleteTable
+                  - dynamodb:DescribeTable
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
+                Resource: arn:aws:dynamodb:us-east-2:524547833731:table/tasks-api-TasksTable-15WCT1VKKIOF5*
+              - Sid: ExecutionRole
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:UpdateAssumeRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:PassRole
+                Resource: arn:aws:iam::524547833731:role/tasks-api-TasksFunctionRole-Up1QN910ZA0J
+              - Sid: InvokeServerlessTransform
+                Effect: Allow
+                Action: cloudformation:CreateChangeSet
+                Resource: arn:aws:cloudformation:us-east-2:aws:transform/Serverless-2016-10-31
+              - Sid: ReadArtifacts
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e/*
+
+  TasksApiCiDeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: TasksApiCiDeployPolicy
+      Description: Least-privilege deploy policy for GitHubActionsTasksApiRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: OperateStacks
+            Effect: Allow
+            Action:
+              - cloudformation:CreateChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResources
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:GetTemplate
+              - cloudformation:ListChangeSets
+              - cloudformation:ListStackResources
+            Resource:
+              - arn:aws:cloudformation:us-east-2:524547833731:stack/tasks-api/*
+              - arn:aws:cloudformation:us-east-2:524547833731:stack/aws-sam-cli-managed-default/*
+          - Sid: TemplateValidation
+            Effect: Allow
+            Action:
+              - cloudformation:GetTemplateSummary
+              - cloudformation:ValidateTemplate
+            Resource: '*'
+          - Sid: Artifacts
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e/*
+          - Sid: ArtifactBucket
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource: arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e
+          - Sid: PassServiceRole
+            Effect: Allow
+            Action: iam:PassRole
+            Resource: arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole
+            Condition:
+              StringEquals:
+                cloudformation:RoleARN: arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole
+          - Sid: CallerIdentity
+            Effect: Allow
+            Action: sts:GetCallerIdentity
+            Resource: '*'
+
+Outputs:
+  ServiceRoleArn:
+    Description: CloudFormation service role for the tasks-api application stack
+    Value: !GetAtt TasksApiCloudFormationServiceRole.Arn
+  CiDeployPolicyArn:
+    Description: Least-privilege deploy policy to attach to GitHubActionsTasksApiRole
+    Value: !Ref TasksApiCiDeployPolicy

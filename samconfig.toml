@@ -6,3 +6,4 @@ region = "us-east-2"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 resolve_s3 = true
+role_arn = "arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole"
