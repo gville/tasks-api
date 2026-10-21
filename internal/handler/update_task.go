@@ -21,62 +21,79 @@ func (h *Handler) updateTask(
 
 	id := request.PathParameters["id"]
 
-	var input UpdateTaskRequest
-
-	err := json.Unmarshal([]byte(request.Body), &input)
+	input, err := parseUpdateBody(request.Body)
 	if err != nil {
-		return events.APIGatewayV2HTTPResponse{
-			StatusCode: http.StatusBadRequest,
-			Headers: map[string]string{
-				"Content-Type": "application/json",
-			},
-			Body: `{"message":"Invalid JSON"}`,
-		}, nil
+		return badRequest("Invalid JSON"), nil
+	}
+
+	if input.Title == nil || input.Description == nil || input.Completed == nil {
+		return badRequest("Invalid task"), nil
 	}
 
 	task := model.Task{
 		ID:          id,
-		Title:       input.Title,
-		Description: input.Description,
-		Completed:   input.Completed,
+		Title:       *input.Title,
+		Description: *input.Description,
+		Completed:   *input.Completed,
 	}
 
-	err = h.taskService.UpdateTask(ctx, task)
+	updated, err := h.taskService.UpdateTask(ctx, task)
 	if err != nil {
-		if errors.Is(err, repository.ErrTaskNotFound) {
-			return events.APIGatewayV2HTTPResponse{
-				StatusCode: http.StatusNotFound,
-				Body:       `{"message":"Task not found"}`,
-			}, nil
-		}
-
-		if errors.Is(err, service.ErrInvalidTask) {
-			return events.APIGatewayV2HTTPResponse{
-				StatusCode: http.StatusBadRequest,
-				Headers: map[string]string{
-					"Content-Type": "application/json",
-				},
-				Body: `{"message":"Invalid task"}`,
-			}, nil
-		}
-
-		log.Printf(
-			"ERROR operation=UpdateTask requestId=%s taskId=%s error=%v",
-			request.RequestContext.RequestID,
+		return h.updateErrorResponse(
+			request,
+			"UpdateTask",
 			id,
 			err,
-		)
-
-		return events.APIGatewayV2HTTPResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       `{"message":"Internal Server Error"}`,
-		}, nil
+		), nil
 	}
+
+	return h.taskResponse(request, "UpdateTask", id, updated), nil
+}
+
+func (h *Handler) updateErrorResponse(
+	request events.APIGatewayV2HTTPRequest,
+	operation string,
+	id string,
+	err error,
+) events.APIGatewayV2HTTPResponse {
+
+	if errors.Is(err, repository.ErrTaskNotFound) {
+		return events.APIGatewayV2HTTPResponse{
+			StatusCode: http.StatusNotFound,
+			Body:       `{"message":"Task not found"}`,
+		}
+	}
+
+	if errors.Is(err, service.ErrInvalidTask) {
+		return badRequest("Invalid task")
+	}
+
+	log.Printf(
+		"ERROR operation=%s requestId=%s taskId=%s error=%v",
+		operation,
+		request.RequestContext.RequestID,
+		id,
+		err,
+	)
+
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: http.StatusInternalServerError,
+		Body:       `{"message":"Internal Server Error"}`,
+	}
+}
+
+func (h *Handler) taskResponse(
+	request events.APIGatewayV2HTTPRequest,
+	operation string,
+	id string,
+	task model.Task,
+) events.APIGatewayV2HTTPResponse {
 
 	body, err := json.Marshal(task)
 	if err != nil {
 		log.Printf(
-			"ERROR operation=UpdateTask requestId=%s taskId=%s error=failed_to_marshal_response details=%v",
+			"ERROR operation=%s requestId=%s taskId=%s error=failed_to_marshal_response details=%v",
+			operation,
 			request.RequestContext.RequestID,
 			id,
 			err,
@@ -85,7 +102,7 @@ func (h *Handler) updateTask(
 		return events.APIGatewayV2HTTPResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       `{"message":"Internal Server Error"}`,
-		}, nil
+		}
 	}
 
 	return events.APIGatewayV2HTTPResponse{
@@ -94,5 +111,15 @@ func (h *Handler) updateTask(
 			"Content-Type": "application/json",
 		},
 		Body: string(body),
-	}, nil
+	}
+}
+
+func badRequest(message string) events.APIGatewayV2HTTPResponse {
+	return events.APIGatewayV2HTTPResponse{
+		StatusCode: http.StatusBadRequest,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+		},
+		Body: `{"message":"` + message + `"}`,
+	}
 }

@@ -32,7 +32,13 @@ type TaskRepository interface {
 	UpdateTask(
 		ctx context.Context,
 		task model.Task,
-	) error
+	) (model.Task, error)
+
+	PatchTask(
+		ctx context.Context,
+		id string,
+		update model.TaskUpdate,
+	) (model.Task, error)
 
 	DeleteTask(
 		ctx context.Context,
@@ -92,12 +98,28 @@ func (s *TaskService) GetTasks(
 func (s *TaskService) UpdateTask(
 	ctx context.Context,
 	task model.Task,
-) error {
+) (model.Task, error) {
 	if strings.TrimSpace(task.Title) == "" {
-		return ErrInvalidTask
+		return model.Task{}, ErrInvalidTask
 	}
 
 	return s.repository.UpdateTask(ctx, task)
+}
+
+func (s *TaskService) PatchTask(
+	ctx context.Context,
+	id string,
+	update model.TaskUpdate,
+) (model.Task, error) {
+	if !update.HasAnyField() {
+		return model.Task{}, ErrInvalidTask
+	}
+
+	if update.Title != nil && strings.TrimSpace(*update.Title) == "" {
+		return model.Task{}, ErrInvalidTask
+	}
+
+	return s.repository.PatchTask(ctx, id, update)
 }
 
 func (s *TaskService) DeleteTask(

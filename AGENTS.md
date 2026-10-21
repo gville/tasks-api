@@ -36,18 +36,29 @@ make local    # sam local start-api against the deployed table
 make deploy   # sam deploy --profile process
 ```
 
-Repository integration tests require AWS credentials and the deployed table:
+Repository integration tests require AWS credentials and a dedicated test table:
 
 ```
-AWS_PROFILE=process TASKS_TABLE_NAME=<table-name> go test -tags=integration ./internal/repository/...
+AWS_PROFILE=process AWS_DEFAULT_REGION=us-east-2 \
+  TASKS_TABLE_NAME="tasks-api-integration-test" go test -tags=integration -count=1 ./internal/repository/...
 ```
 
-Resolve the table name from the stack output:
+The suite creates, updates and deletes tasks, so it MUST NOT run against the
+application table. `tasks-api-integration-test` is a standalone table (partition key
+`id` of type String, no secondary indexes, `PAY_PER_REQUEST`) managed separately
+from the application stack; the test run neither creates nor deletes it.
+
+Create it with:
 
 ```
-aws cloudformation describe-stacks --stack-name tasks-api \
-  --query "Stacks[0].Outputs[?OutputKey=='TasksTableName'].OutputValue" --output text
+aws dynamodb create-table --table-name tasks-api-integration-test \
+  --attribute-definitions AttributeName=id,AttributeType=S \
+  --key-schema AttributeName=id,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST --region us-east-2 --profile process
 ```
+
+The application table (the one deployed by the `tasks-api` stack) is not a valid
+target for the integration suite.
 
 ## Deployment
 
@@ -75,8 +86,10 @@ The template creates the CloudFormation service role and the managed CI deploy p
 
 - Layering: `handler` handles HTTP/JSON only; `service` owns business rules and ID generation; `repository` owns DynamoDB. Depend inward through the interfaces `handler.TaskService` and `service.TaskRepository`.
 - IDs are ULIDs generated in the service layer.
-- Error mapping: `repository.ErrTaskNotFound` -> 404, `service.ErrInvalidTask` -> 400, anything else -> 500 with a generic message.
-- Persistence uses DynamoDB conditional writes (`attribute_exists(id)`) to enforce existence for update and delete.
+- Update semantics: `PUT /tasks/{id}` replaces the whole task and requires `title`, `description`, and `completed` (an explicit `completed: false` counts as present). `PATCH /tasks/{id}` modifies only the provided fields, requires at least one, and preserves omitted fields. Both reject unknown fields, `null` values, empty/whitespace bodies, non-object JSON, and trailing JSON values with 400.
+- Error mapping: `repository.ErrTaskNotFound` -> 404, `service.ErrInvalidTask` -> 400, anything else -> 500 with a generic message. Only a DynamoDB `ConditionalCheckFailedException` maps to `ErrTaskNotFound`; every other DynamoDB error is surfaced as 500.
+- Update responses return the task as persisted (DynamoDB `ReturnValues: ALL_NEW`), not reconstructed from the request body.
+- Persistence uses DynamoDB conditional writes (`attribute_exists(id)`) to enforce existence for update and delete. Updates are a single `UpdateItem` with `ExpressionAttributeNames`/`ExpressionAttributeValues`; there is no read-modify-write.
 - Tests: unit tests mock the layer below; repository integration tests sit behind the `integration` build tag and are not run by `make test`.
 
 ## Domain notes

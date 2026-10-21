@@ -57,6 +57,12 @@ Resources:
             Path: /tasks/{id}
             Method: PUT
         
+        PatchTask:
+          Type: HttpApi
+          Properties:
+            Path: /tasks/{id}
+            Method: PATCH
+
         DeleteTask:
           Type: HttpApi
           Properties:

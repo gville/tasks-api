@@ -11,8 +11,13 @@ import (
 type mockTaskRepository struct {
 	createdTask   model.Task
 	updatedTask   model.Task
+	patchedTask   model.Task
+	patchedID     string
+	patchedUpdate model.TaskUpdate
 	createError   error
 	updateError   error
+	patchError    error
+	patchCalled   bool
 	task          model.Task
 	getError      error
 	tasks         []model.Task
@@ -45,9 +50,20 @@ func (m *mockTaskRepository) GetTasks(
 func (m *mockTaskRepository) UpdateTask(
 	ctx context.Context,
 	task model.Task,
-) error {
+) (model.Task, error) {
 	m.updatedTask = task
-	return m.updateError
+	return task, m.updateError
+}
+
+func (m *mockTaskRepository) PatchTask(
+	ctx context.Context,
+	id string,
+	update model.TaskUpdate,
+) (model.Task, error) {
+	m.patchCalled = true
+	m.patchedID = id
+	m.patchedUpdate = update
+	return m.patchedTask, m.patchError
 }
 
 func (m *mockTaskRepository) DeleteTask(
@@ -154,7 +170,7 @@ func TestUpdateTaskEmptyTitle(t *testing.T) {
 	repository := &mockTaskRepository{}
 	service := NewTaskService(repository)
 
-	err := service.UpdateTask(
+	_, err := service.UpdateTask(
 		context.Background(),
 		model.Task{
 			ID:          "123",
@@ -170,6 +186,10 @@ func TestUpdateTaskEmptyTitle(t *testing.T) {
 			err,
 		)
 	}
+
+	if repository.updatedTask != (model.Task{}) {
+		t.Fatal("expected no write when validation fails")
+	}
 }
 
 func TestUpdateTask(t *testing.T) {
@@ -183,7 +203,7 @@ func TestUpdateTask(t *testing.T) {
 		Completed:   true,
 	}
 
-	err := service.UpdateTask(
+	result, err := service.UpdateTask(
 		context.Background(),
 		task,
 	)
@@ -195,11 +215,19 @@ func TestUpdateTask(t *testing.T) {
 		)
 	}
 
+	if result != task {
+		t.Fatalf(
+			"expected result %+v, got %+v",
+			task,
+			result,
+		)
+	}
+
 	if repository.updatedTask != task {
 		t.Fatalf(
 			"expected repository to receive task %+v, got %+v",
 			task,
-			repository.createdTask,
+			repository.updatedTask,
 		)
 	}
 }
@@ -213,7 +241,7 @@ func TestUpdateTaskRepositoryError(t *testing.T) {
 
 	service := NewTaskService(repository)
 
-	err := service.UpdateTask(
+	_, err := service.UpdateTask(
 		context.Background(),
 		model.Task{
 			ID:          "123",
@@ -227,6 +255,182 @@ func TestUpdateTaskRepositoryError(t *testing.T) {
 		t.Fatalf(
 			"expected error %v, got %v",
 			repositoryError,
+			err,
+		)
+	}
+}
+
+func TestPatchTaskNoFields(t *testing.T) {
+	repository := &mockTaskRepository{}
+	service := NewTaskService(repository)
+
+	_, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{},
+	)
+
+	if err != ErrInvalidTask {
+		t.Fatalf(
+			"expected ErrInvalidTask, got %v",
+			err,
+		)
+	}
+
+	if repository.patchCalled {
+		t.Fatal("expected no write when PATCH has no fields")
+	}
+}
+
+func TestPatchTaskEmptyTitle(t *testing.T) {
+	repository := &mockTaskRepository{}
+	service := NewTaskService(repository)
+
+	empty := ""
+
+	_, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{
+			Title: &empty,
+		},
+	)
+
+	if err != ErrInvalidTask {
+		t.Fatalf(
+			"expected ErrInvalidTask, got %v",
+			err,
+		)
+	}
+
+	if repository.patchCalled {
+		t.Fatal("expected no write when provided title fails validation")
+	}
+}
+
+func TestPatchTaskWhitespaceTitle(t *testing.T) {
+	repository := &mockTaskRepository{}
+	service := NewTaskService(repository)
+
+	blank := "   "
+
+	_, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{
+			Title: &blank,
+		},
+	)
+
+	if err != ErrInvalidTask {
+		t.Fatalf(
+			"expected ErrInvalidTask, got %v",
+			err,
+		)
+	}
+
+	if repository.patchCalled {
+		t.Fatal("expected no write when provided title is whitespace only")
+	}
+}
+
+func TestPatchTaskOmitsTitle(t *testing.T) {
+	persisted := model.Task{
+		ID:          "123",
+		Title:       "Comprar leche",
+		Description: "Ir al supermercado",
+		Completed:   true,
+	}
+
+	repository := &mockTaskRepository{
+		patchedTask: persisted,
+	}
+
+	service := NewTaskService(repository)
+
+	completed := false
+
+	result, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{
+			Completed: &completed,
+		},
+	)
+
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	if result != persisted {
+		t.Fatalf(
+			"expected result %+v, got %+v",
+			persisted,
+			result,
+		)
+	}
+
+	if repository.patchedUpdate.Title != nil {
+		t.Fatal("expected omitted title to remain nil in the update")
+	}
+
+	if repository.patchedUpdate.Completed == nil ||
+		*repository.patchedUpdate.Completed != false {
+		t.Fatal("expected completed false to be forwarded")
+	}
+}
+
+func TestPatchTaskRepositoryError(t *testing.T) {
+	repositoryError := errors.New("database error")
+
+	repository := &mockTaskRepository{
+		patchError: repositoryError,
+	}
+
+	service := NewTaskService(repository)
+
+	title := "Comprar leche"
+
+	_, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{
+			Title: &title,
+		},
+	)
+
+	if err != repositoryError {
+		t.Fatalf(
+			"expected error %v, got %v",
+			repositoryError,
+			err,
+		)
+	}
+}
+
+func TestPatchTaskNotFound(t *testing.T) {
+	notFound := errors.New("task not found")
+
+	repository := &mockTaskRepository{
+		patchError: notFound,
+	}
+
+	service := NewTaskService(repository)
+
+	completed := true
+
+	_, err := service.PatchTask(
+		context.Background(),
+		"123",
+		model.TaskUpdate{
+			Completed: &completed,
+		},
+	)
+
+	if err != notFound {
+		t.Fatalf(
+			"expected error %v, got %v",
+			notFound,
 			err,
 		)
 	}

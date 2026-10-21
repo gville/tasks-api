@@ -15,7 +15,8 @@ http:
     data: |-
       {
         "title": "Aprender Bruno",
-        "description": "Colección de requests actualizada"
+        "description": "Colección de requests actualizada",
+        "completed": true
       }
   auth: inherit
 

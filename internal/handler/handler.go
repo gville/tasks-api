@@ -37,6 +37,9 @@ func (h *Handler) Handle(
 	case http.MethodPut:
 		return h.updateTask(ctx, request)
 
+	case http.MethodPatch:
+		return h.patchTask(ctx, request)
+
 	case http.MethodDelete:
 		return h.deleteTask(ctx, request)
 	}
@@ -66,7 +69,13 @@ type TaskService interface {
 	UpdateTask(
 		ctx context.Context,
 		task model.Task,
-	) error
+	) (model.Task, error)
+
+	PatchTask(
+		ctx context.Context,
+		id string,
+		update model.TaskUpdate,
+	) (model.Task, error)
 
 	DeleteTask(
 		ctx context.Context,
@@ -80,7 +89,7 @@ type CreateTaskRequest struct {
 }
 
 type UpdateTaskRequest struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Completed   bool   `json:"completed"`
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+	Completed   *bool   `json:"completed"`
 }

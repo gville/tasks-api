@@ -20,6 +20,9 @@ type mockTaskService struct {
 	task              model.Task
 	tasks             []model.Task
 	updatedTask       model.Task
+	updateInput       model.Task
+	patchedUpdate     model.TaskUpdate
+	patchedID         string
 	deletedID         string
 	createTitle       string
 	createDescription string
@@ -29,7 +32,19 @@ type mockTaskService struct {
 	getError      error
 	getTasksError error
 	updateError   error
+	patchError    error
 	deleteError   error
+
+	updateCalls int
+	patchCalls  int
+}
+
+func (m *mockTaskService) updateCallCount() int {
+	return m.updateCalls
+}
+
+func (m *mockTaskService) patchCallCount() int {
+	return m.patchCalls
 }
 
 func (m *mockTaskService) CreateTask(
@@ -60,9 +75,23 @@ func (m *mockTaskService) GetTasks(
 func (m *mockTaskService) UpdateTask(
 	ctx context.Context,
 	task model.Task,
-) error {
+) (model.Task, error) {
+	m.updateCalls++
+	m.updateInput = task
 	m.updatedTask = task
-	return m.updateError
+	return m.updatedTask, m.updateError
+}
+
+func (m *mockTaskService) PatchTask(
+	ctx context.Context,
+	id string,
+	update model.TaskUpdate,
+) (model.Task, error) {
+	m.patchCalls++
+	m.patchedID = id
+	m.patchedUpdate = update
+	m.updatedTask = m.task
+	return m.updatedTask, m.patchError
 }
 
 func (m *mockTaskService) DeleteTask(
@@ -867,7 +896,7 @@ func TestMethodNotAllowed(t *testing.T) {
 	request := events.APIGatewayV2HTTPRequest{
 		RequestContext: events.APIGatewayV2HTTPRequestContext{
 			HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
-				Method: http.MethodPatch,
+				Method: http.MethodOptions,
 			},
 		},
 	}
@@ -883,6 +912,465 @@ func TestMethodNotAllowed(t *testing.T) {
 	}
 
 	if response.Body != `{"message":"Method not allowed"}` {
+		t.Fatalf("unexpected body: %s", response.Body)
+	}
+}
+
+func updateRequest(method string, body string) events.APIGatewayV2HTTPRequest {
+	return events.APIGatewayV2HTTPRequest{
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+				Method: method,
+			},
+		},
+		PathParameters: map[string]string{
+			"id": "01TEST",
+		},
+		Body: body,
+	}
+}
+
+func TestPutMissingFields(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+	}{
+		{"missing title", `{"description":"d","completed":true}`},
+		{"missing description", `{"title":"t","completed":true}`},
+		{"missing completed", `{"title":"t","description":"d"}`},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			taskService := &mockTaskService{}
+			handler := NewHandler(taskService)
+
+			response, err := handler.Handle(
+				context.Background(),
+				updateRequest(http.MethodPut, tc.body),
+			)
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if response.StatusCode != http.StatusBadRequest {
+				t.Fatalf(
+					"expected status 400, got %d",
+					response.StatusCode,
+				)
+			}
+
+			if taskService.updateCallCount() != 0 {
+				t.Fatalf(
+					"expected UpdateTask not to be called, got %d calls",
+					taskService.updateCallCount(),
+				)
+			}
+		})
+	}
+}
+
+func TestPutExplicitFalse(t *testing.T) {
+	taskService := &mockTaskService{}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(
+			http.MethodPut,
+			`{"title":"t","description":"d","completed":false}`,
+		),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.updateInput.Completed {
+		t.Fatal("expected completed false to be applied")
+	}
+}
+
+func TestUpdateInvalidBodies(t *testing.T) {
+	cases := []struct {
+		name   string
+		method string
+		body   string
+	}{
+		{"put empty body", http.MethodPut, ``},
+		{"put whitespace body", http.MethodPut, `   `},
+		{"patch empty body", http.MethodPatch, ``},
+		{"patch whitespace body", http.MethodPatch, "\n\t "},
+		{"put root null", http.MethodPut, `null`},
+		{"patch root null", http.MethodPatch, `null`},
+		{"put root null with spaces", http.MethodPut, `  null  `},
+		{"put non-object array", http.MethodPut, `[]`},
+		{"patch non-object array", http.MethodPatch, ` [1,2,3] `},
+		{"patch non-object string", http.MethodPatch, `"title"`},
+		{"put non-object number", http.MethodPut, `42`},
+		{"patch non-object boolean", http.MethodPatch, `false`},
+		{"put trailing values", http.MethodPut, `{"title":"t","description":"d","completed":true}{}`},
+		{"patch trailing values", http.MethodPatch, `{"title":"t"} extra`},
+		{"put trailing null", http.MethodPut, `{"title":"t","description":"d","completed":true} null`},
+		{"put unknown field", http.MethodPut, `{"title":"t","description":"d","completed":true,"foo":1}`},
+		{"patch unknown field", http.MethodPatch, `{"foo":1}`},
+		{"put capitalized title", http.MethodPut, `{"Title":"t","description":"d","completed":true}`},
+		{"patch capitalized description", http.MethodPatch, `{"Description":"d"}`},
+		{"patch capitalized completed", http.MethodPatch, `{"Completed":true}`},
+		{"put uppercase title", http.MethodPut, `{"TITLE":"t","description":"d","completed":true}`},
+		{"put capitalized field with exact others", http.MethodPut, `{"title":"t","description":"d","Completed":true}`},
+		{"patch mixed casing", http.MethodPatch, `{"title":"t","Description":"d","COMPLETED":true}`},
+		{"put null title", http.MethodPut, `{"title":null,"description":"d","completed":true}`},
+		{"patch null completed", http.MethodPatch, `{"completed":null}`},
+		{"put invalid json", http.MethodPut, `{"title":`},
+		{"patch invalid json", http.MethodPatch, `{`},
+		{"patch empty object", http.MethodPatch, `{}`},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			taskService := &mockTaskService{}
+			handler := NewHandler(taskService)
+
+			response, err := handler.Handle(
+				context.Background(),
+				updateRequest(tc.method, tc.body),
+			)
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if response.StatusCode != http.StatusBadRequest {
+				t.Fatalf(
+					"expected status 400, got %d (body %s)",
+					response.StatusCode,
+					response.Body,
+				)
+			}
+
+			if taskService.updateCallCount() != 0 {
+				t.Fatalf(
+					"expected UpdateTask not to be called, got %d calls",
+					taskService.updateCallCount(),
+				)
+			}
+
+			if taskService.patchCallCount() != 0 {
+				t.Fatalf(
+					"expected PatchTask not to be called, got %d calls",
+					taskService.patchCallCount(),
+				)
+			}
+		})
+	}
+}
+
+func TestPatchOnlyTitle(t *testing.T) {
+	taskService := &mockTaskService{
+		task: model.Task{
+			ID:          "01TEST",
+			Title:       "nuevo",
+			Description: "vieja",
+			Completed:   true,
+		},
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"title":"nuevo"}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.patchedID != "01TEST" {
+		t.Fatalf("expected id 01TEST, got %s", taskService.patchedID)
+	}
+
+	if taskService.patchedUpdate.Title == nil ||
+		*taskService.patchedUpdate.Title != "nuevo" {
+		t.Fatal("expected title to be forwarded")
+	}
+
+	if taskService.patchedUpdate.Description != nil ||
+		taskService.patchedUpdate.Completed != nil {
+		t.Fatal("expected omitted fields to remain nil")
+	}
+
+	var responseTask model.Task
+
+	if err := json.Unmarshal([]byte(response.Body), &responseTask); err != nil {
+		t.Fatalf("invalid JSON response: %v", err)
+	}
+
+	if responseTask != taskService.task {
+		t.Fatalf(
+			"expected persisted task %+v, got %+v",
+			taskService.task,
+			responseTask,
+		)
+	}
+}
+
+func TestPatchOnlyDescription(t *testing.T) {
+	taskService := &mockTaskService{
+		task: model.Task{
+			ID:          "01TEST",
+			Title:       "vieja",
+			Description: "nueva",
+			Completed:   true,
+		},
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"description":"nueva"}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.patchedID != "01TEST" {
+		t.Fatalf("expected id 01TEST, got %s", taskService.patchedID)
+	}
+
+	if taskService.patchedUpdate.Description == nil ||
+		*taskService.patchedUpdate.Description != "nueva" {
+		t.Fatal("expected description to be forwarded")
+	}
+
+	if taskService.patchedUpdate.Title != nil ||
+		taskService.patchedUpdate.Completed != nil {
+		t.Fatal("expected omitted fields to remain nil")
+	}
+
+	var responseTask model.Task
+
+	if err := json.Unmarshal([]byte(response.Body), &responseTask); err != nil {
+		t.Fatalf("invalid JSON response: %v", err)
+	}
+
+	if responseTask != taskService.task {
+		t.Fatalf(
+			"expected persisted task %+v, got %+v",
+			taskService.task,
+			responseTask,
+		)
+	}
+}
+
+func TestPatchOnlyCompletedTrue(t *testing.T) {
+	taskService := &mockTaskService{
+		task: model.Task{
+			ID:          "01TEST",
+			Title:       "t",
+			Description: "d",
+			Completed:   true,
+		},
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"completed":true}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.patchedUpdate.Completed == nil ||
+		*taskService.patchedUpdate.Completed != true {
+		t.Fatal("expected completed true to be forwarded as present")
+	}
+
+	if taskService.patchedUpdate.Title != nil ||
+		taskService.patchedUpdate.Description != nil {
+		t.Fatal("expected omitted fields to remain nil")
+	}
+
+	var responseTask model.Task
+
+	if err := json.Unmarshal([]byte(response.Body), &responseTask); err != nil {
+		t.Fatalf("invalid JSON response: %v", err)
+	}
+
+	if responseTask != taskService.task {
+		t.Fatalf(
+			"expected persisted task %+v, got %+v",
+			taskService.task,
+			responseTask,
+		)
+	}
+}
+
+func TestPatchOnlyCompletedFalse(t *testing.T) {
+	taskService := &mockTaskService{
+		task: model.Task{
+			ID:          "01TEST",
+			Title:       "t",
+			Description: "d",
+			Completed:   false,
+		},
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"completed":false}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.patchedUpdate.Completed == nil ||
+		*taskService.patchedUpdate.Completed != false {
+		t.Fatal("expected completed false to be forwarded as present")
+	}
+
+	if taskService.patchedUpdate.Title != nil ||
+		taskService.patchedUpdate.Description != nil {
+		t.Fatal("expected omitted fields to remain nil")
+	}
+}
+
+func TestPatchMultipleFields(t *testing.T) {
+	taskService := &mockTaskService{
+		task: model.Task{
+			ID:          "01TEST",
+			Title:       "t",
+			Description: "nueva",
+			Completed:   true,
+		},
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(
+			http.MethodPatch,
+			`{"description":"nueva","completed":true}`,
+		),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	if taskService.patchedUpdate.Description == nil ||
+		*taskService.patchedUpdate.Description != "nueva" {
+		t.Fatal("expected description to be forwarded")
+	}
+
+	if taskService.patchedUpdate.Completed == nil ||
+		*taskService.patchedUpdate.Completed != true {
+		t.Fatal("expected completed true to be forwarded")
+	}
+
+	if taskService.patchedUpdate.Title != nil {
+		t.Fatal("expected omitted title to remain nil")
+	}
+}
+
+func TestPatchInvalidTitle(t *testing.T) {
+	taskService := &mockTaskService{
+		patchError: service.ErrInvalidTask,
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"title":"   "}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected status 400, got %d", response.StatusCode)
+	}
+
+	if response.Body != `{"message":"Invalid task"}` {
+		t.Fatalf("unexpected body: %s", response.Body)
+	}
+}
+
+func TestPatchNotFound(t *testing.T) {
+	taskService := &mockTaskService{
+		patchError: repository.ErrTaskNotFound,
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"completed":true}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected status 404, got %d", response.StatusCode)
+	}
+
+	if response.Body != `{"message":"Task not found"}` {
+		t.Fatalf("unexpected body: %s", response.Body)
+	}
+}
+
+func TestPatchInternalServerError(t *testing.T) {
+	taskService := &mockTaskService{
+		patchError: errors.New("database error"),
+	}
+	handler := NewHandler(taskService)
+
+	response, err := handler.Handle(
+		context.Background(),
+		updateRequest(http.MethodPatch, `{"completed":true}`),
+	)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if response.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("expected status 500, got %d", response.StatusCode)
+	}
+
+	if response.Body != `{"message":"Internal Server Error"}` {
 		t.Fatalf("unexpected body: %s", response.Body)
 	}
 }
