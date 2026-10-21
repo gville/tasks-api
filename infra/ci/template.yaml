@@ -27,16 +27,11 @@ Resources:
               - Sid: ApiGatewayV2
                 Effect: Allow
                 Action:
-                  - apigatewayv2:CreateApi
-                  - apigatewayv2:UpdateApi
-                  - apigatewayv2:GetApi
-                  - apigatewayv2:DeleteApi
-                  - apigatewayv2:CreateStage
-                  - apigatewayv2:UpdateStage
-                  - apigatewayv2:GetStage
-                  - apigatewayv2:DeleteStage
-                  - apigatewayv2:TagResource
-                  - apigatewayv2:UntagResource
+                  - apigateway:GET
+                  - apigateway:POST
+                  - apigateway:PUT
+                  - apigateway:PATCH
+                  - apigateway:DELETE
                 Resource:
                   - arn:aws:apigateway:us-east-2::/apis/3547pxd431
                   - arn:aws:apigateway:us-east-2::/apis/3547pxd431/stages/*
