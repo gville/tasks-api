@@ -71,8 +71,10 @@ The bootstrap stack is deployed separately by an authorized administrator:
 ```
 aws cloudformation deploy --stack-name tasks-api-ci \
   --template-file infra/ci/template.yaml \
-  --capabilities CAPABILITY_NAMED_IAM --region us-east-2
+  --capabilities CAPABILITY_NAMED_IAM --region us-east-2 --profile aws-admin
 ```
+
+Updating `tasks-api-ci` requires an identity authorized to modify the inline policy of the `TasksApiCloudFormationServiceRole` role, i.e. `iam:PutRolePolicy` on that role. Do not assume the `process` profile has those permissions: in this account `process` maps to `aws-developer`, which is denied that action, so the update fails with `AccessDenied` and rolls back. The `aws-admin` profile is the identity used for the bootstrap in this environment; that profile name is environment-specific, so verify the caller's permissions before updating the stack.
 
 The template creates the CloudFormation service role and the managed CI deploy policy. The GitHub Actions role and its trust relationship must be configured separately. The GitHub OIDC provider and the SAM-managed artifact bucket (`aws-sam-cli-managed-default-*`) are also bootstrap dependencies and are not automatically recreated if deleted.
 

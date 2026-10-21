@@ -15,7 +15,7 @@
 
 ## 3. Update the bootstrap stack (administrator, pending)
 
-- [ ] 3.1 Update the `tasks-api-ci` stack with the corrected template: `aws cloudformation deploy --stack-name tasks-api-ci --template-file infra/ci/template.yaml --capabilities CAPABILITY_NAMED_IAM --region us-east-2 --profile process`; verify it reaches `UPDATE_COMPLETE` and that the service role is not replaced
+- [ ] 3.1 Update the `tasks-api-ci` stack with the corrected template, using an identity authorized to modify the service role's inline policy (`iam:PutRolePolicy` on `TasksApiCloudFormationServiceRole`; the `process` profile is denied that action in this environment): `aws cloudformation deploy --stack-name tasks-api-ci --template-file infra/ci/template.yaml --capabilities CAPABILITY_NAMED_IAM --region us-east-2 --profile aws-admin`; verify it reaches `UPDATE_COMPLETE` and that the service role is not replaced
 - [ ] 3.2 Inspect the live role: `aws iam get-role-policy --role-name TasksApiCloudFormationServiceRole --policy-name TasksApiCloudFormationServiceRolePolicy --profile process --region us-east-2` shows the five `apigateway:` actions and the unchanged resource list
 - [ ] 3.3 Simulate the deploy's operations for the role: `aws iam simulate-principal-policy --policy-source-arn arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole --action-names apigateway:GET apigateway:POST apigateway:PUT apigateway:PATCH apigateway:DELETE --resource-arns arn:aws:apigateway:us-east-2::/apis/3547pxd431 arn:aws:apigateway:us-east-2::/apis/3547pxd431/stages/\$default --profile process --region us-east-2`; verify every pair evaluates to `allowed`, and record the limitation that the simulator normalizes API Gateway resource ARNs, so it validates the action level only
 
