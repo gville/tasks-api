@@ -160,6 +160,7 @@ Executed locally on the corrected template:
 - `git diff --check` → clean.
 - `openspec validate --strict` over the change and the specs → passing.
 
-Pending in AWS, tracked as tasks: the `tasks-api-ci` bootstrap update, the role
-inspection and simulation, the re-run of the deploy, and the post-deploy verification
-of status and physical resource identity.
+Executed in AWS and tracked as tasks: the `tasks-api-ci` bootstrap update (task 3.1),
+the role inspection and simulation (tasks 3.2 and 3.3), the re-run of the deploy
+(tasks 4.1 to 4.3), and the post-deploy verification of status and physical resource
+identity (tasks 5.1 to 5.4).

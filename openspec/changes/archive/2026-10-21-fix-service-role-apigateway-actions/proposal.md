@@ -22,7 +22,7 @@ in `UPDATE_ROLLBACK_COMPLETE`.
 - Keep the statement's resource scope exactly as it is today: the application API ARN
   and that API's stages. No resource, service, or wildcard is added.
 - Update the `tasks-api-ci` bootstrap stack so the service role's inline policy
-  actually contains those actions (administrator action, still pending).
+  actually contains those actions (administrator action, executed on 2026-10-21).
 - Re-run the `tasks-api` deployment so the pending API change is applied, and verify
   stack status, granted permissions, and physical resource identity before and after.
 
