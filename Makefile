@@ -1,4 +1,4 @@
-AWS_PROFILE ?= process
+AWS_PROFILE ?= default
 
 .PHONY: build test deploy local
 
@@ -8,11 +8,11 @@ build:
 test:
 	go test ./...
 
-deploy:
+deploy: build
 	sam deploy --profile $(AWS_PROFILE)
 
 local:
-	./scripts/local.sh
+	AWS_PROFILE=$(AWS_PROFILE) ./scripts/local.sh
 
 build-TasksFunction:
 	GOOS=linux GOARCH=amd64 go build -o $(ARTIFACTS_DIR)/bootstrap ./cmd/tasks-api

@@ -1,5 +1,9 @@
 # Design: task-update-semantics
 
+> Note: account, API, role, table, bucket, and profile identifiers were replaced
+> with placeholders when preparing this repository for a portfolio. The technical
+> content and historical decisions are unchanged.
+
 ## Context
 
 The update path is `handler.updateTask` -> `TaskService.UpdateTask` ->
@@ -152,16 +156,16 @@ former yields `404`.
 The repository integration tests were executed against a dedicated DynamoDB table,
 so the suite never reads or writes application data:
 
-- Table: `tasks-api-integration-test`, independent from the application table.
+- Table: `YOUR_TASKS_TABLE_NAME`, independent from the application table.
 - Region: `us-east-2`.
-- AWS profile: `process`.
+- AWS profile: `YOUR_AWS_PROFILE`.
 - Schema: partition key `id` (String), no secondary indexes, `PAY_PER_REQUEST`
   billing.
 
 Command:
 
 ```
-AWS_PROFILE=process AWS_DEFAULT_REGION=us-east-2 TASKS_TABLE_NAME="tasks-api-integration-test" go test -tags=integration -count=1 -v ./internal/repository/...
+AWS_PROFILE=YOUR_AWS_PROFILE AWS_DEFAULT_REGION=YOUR_AWS_REGION TASKS_TABLE_NAME="YOUR_TASKS_TABLE_NAME" go test -tags=integration -count=1 -v ./internal/repository/...
 ```
 
 Result: `PASS`, `ok tasks-api/internal/repository 28.727s`. The 13 integration

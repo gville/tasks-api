@@ -9,6 +9,12 @@ TABLE_NAME=$(aws cloudformation describe-stacks \
     --query "Stacks[0].Outputs[?OutputKey=='TasksTableName'].OutputValue" \
     --output text)
 
+if [ -z "$TABLE_NAME" ] || [ "$TABLE_NAME" = "None" ]; then
+    echo "Could not read TasksTableName from the tasks-api stack." >&2
+    echo "Deploy the stack first and verify AWS_PROFILE and AWS_REGION." >&2
+    exit 1
+fi
+
 cat > env.json <<EOF
 {
   "TasksFunction": {

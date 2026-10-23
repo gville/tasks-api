@@ -1,13 +1,17 @@
 # Design
 
+> Note: account, API, role, table, bucket, and profile identifiers were replaced
+> with placeholders when preparing this repository for a portfolio. The technical
+> content and historical decisions are unchanged.
+
 ## Context
 
 See `proposal.md` for motivation. Current state verified against the live account:
 
-- `tasks-api` stack (region `us-east-2`, account `524547833731`) has 10 resources, all CloudFormation-managed: `ServerlessHttpApi` (`3547pxd431`) + stage, `TasksFunction` (`tasks-api-TasksFunction-woOv7SWZ5JEV`) + 5 `AWS::Lambda::Permission`, `TasksFunctionRole` (`tasks-api-TasksFunctionRole-Up1QN910ZA0J`), and `TasksTable` (`tasks-api-TasksTable-15WCT1VKKIOF5`). The 5 HTTP routes live inside the API's OpenAPI `Body`, so there are no standalone route resources.
+- `tasks-api` stack (region `us-east-2`, account `YOUR_ACCOUNT_ID`) has 10 resources, all CloudFormation-managed: `ServerlessHttpApi` (`YOUR_API_ID`) + stage, `TasksFunction` (`tasks-api-TasksFunction-<suffix>`) + 5 `AWS::Lambda::Permission`, `TasksFunctionRole` (`tasks-api-TasksFunctionRole-<suffix>`), and `TasksTable` (`tasks-api-TasksTable-<suffix>`). The 5 HTTP routes live inside the API's OpenAPI `Body`, so there are no standalone route resources.
 - The stack's `RoleARN` is currently empty; it has never used a service role.
-- `GitHubActionsTasksApiRole` (OIDC-federated, trust scoped to `repo:gville@8316152/tasks-api@1414858068:ref:refs/heads/main`) carries `PowerUserAccess` plus an inline `TasksApiReadExecutionRole` granting `iam:GetRole` on the function role.
-- SAM artifacts live in the bootstrap bucket `aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e` (its stack predates this change and is SAM bootstrap, not application infrastructure).
+- `GitHubActionsTasksApiRole` (OIDC-federated, trust scoped to `repo:YOUR_GITHUB_OWNER/YOUR_REPO:ref:refs/heads/main`) carries `PowerUserAccess` plus an inline `TasksApiReadExecutionRole` granting `iam:GetRole` on the function role.
+- SAM artifacts live in the bootstrap bucket `aws-sam-cli-managed-default-samclisourcebucket-<suffix>` (its stack predates this change and is SAM bootstrap, not application infrastructure).
 - `sam deploy` supports `--role-arn`, and CloudFormation `UpdateStack.RoleARN` persists: "CloudFormation always uses this role for all future operations on the stack." The association is one-way, it cannot be removed after set.
 
 ## Goals / Non-Goals
@@ -53,8 +57,8 @@ Permissions are derived resource-by-resource from the current template, includin
         "apigatewayv2:TagResource", "apigatewayv2:UntagResource"
       ],
       "Resource": [
-        "arn:aws:apigateway:us-east-2::/apis/3547pxd431",
-        "arn:aws:apigateway:us-east-2::/apis/3547pxd431/stages/*"
+        "arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID",
+        "arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID/stages/*"
       ]
     },
     {
@@ -66,7 +70,7 @@ Permissions are derived resource-by-resource from the current template, includin
         "lambda:ListVersionsByFunction", "lambda:AddPermission", "lambda:RemovePermission",
         "lambda:TagResource", "lambda:UntagResource"
       ],
-      "Resource": "arn:aws:lambda:us-east-2:524547833731:function:tasks-api-TasksFunction-woOv7SWZ5JEV"
+      "Resource": "arn:aws:lambda:us-east-2:YOUR_ACCOUNT_ID:function:tasks-api-TasksFunction-<suffix>"
     },
     {
       "Sid": "DynamoDB",
@@ -75,7 +79,7 @@ Permissions are derived resource-by-resource from the current template, includin
         "dynamodb:CreateTable", "dynamodb:UpdateTable", "dynamodb:DeleteTable", "dynamodb:DescribeTable",
         "dynamodb:TagResource", "dynamodb:UntagResource"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-2:524547833731:table/tasks-api-TasksTable-15WCT1VKKIOF5*"
+      "Resource": "arn:aws:dynamodb:us-east-2:YOUR_ACCOUNT_ID:table/tasks-api-TasksTable-<suffix>*"
     },
     {
       "Sid": "ExecutionRole",
@@ -85,7 +89,7 @@ Permissions are derived resource-by-resource from the current template, includin
         "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:AttachRolePolicy", "iam:DetachRolePolicy",
         "iam:TagRole", "iam:UntagRole", "iam:PassRole"
       ],
-      "Resource": "arn:aws:iam::524547833731:role/tasks-api-TasksFunctionRole-Up1QN910ZA0J"
+      "Resource": "arn:aws:iam::YOUR_ACCOUNT_ID:role/tasks-api-TasksFunctionRole-<suffix>"
     },
     {
       "Sid": "InvokeServerlessTransform",
@@ -97,7 +101,7 @@ Permissions are derived resource-by-resource from the current template, includin
       "Sid": "ReadArtifacts",
       "Effect": "Allow",
       "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e/*"
+      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-<suffix>/*"
     }
   ]
 }
@@ -141,8 +145,8 @@ Replaces `PowerUserAccess`. The CloudFormation actions cover the application sta
         "cloudformation:ListStackResources"
       ],
       "Resource": [
-        "arn:aws:cloudformation:us-east-2:524547833731:stack/tasks-api/*",
-        "arn:aws:cloudformation:us-east-2:524547833731:stack/aws-sam-cli-managed-default/*"
+        "arn:aws:cloudformation:us-east-2:YOUR_ACCOUNT_ID:stack/tasks-api/*",
+        "arn:aws:cloudformation:us-east-2:YOUR_ACCOUNT_ID:stack/aws-sam-cli-managed-default/*"
       ]
     },
     {
@@ -155,20 +159,20 @@ Replaces `PowerUserAccess`. The CloudFormation actions cover the application sta
       "Sid": "Artifacts",
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
-      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e/*"
+      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-<suffix>/*"
     },
     {
       "Sid": "ArtifactBucket",
       "Effect": "Allow",
       "Action": ["s3:ListBucket", "s3:GetBucketLocation"],
-      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-0rgjdmzxq67e"
+      "Resource": "arn:aws:s3:::aws-sam-cli-managed-default-samclisourcebucket-<suffix>"
     },
     {
       "Sid": "PassServiceRole",
       "Effect": "Allow",
       "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole",
-      "Condition": { "StringEquals": { "cloudformation:RoleARN": "arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole" } }
+      "Resource": "arn:aws:iam::YOUR_ACCOUNT_ID:role/TasksApiCloudFormationServiceRole",
+      "Condition": { "StringEquals": { "cloudformation:RoleARN": "arn:aws:iam::YOUR_ACCOUNT_ID:role/TasksApiCloudFormationServiceRole" } }
     },
     {
       "Sid": "CallerIdentity",
@@ -201,14 +205,14 @@ Ordering: create `infra/ci/` → bootstrap-deploy it with the admin profile → 
 - **Scoped CI policy may be incomplete** → Missing an action breaks the deploy. Mitigation: rollback is re-attaching `PowerUserAccess` while iterating the policy; the association itself is harmless. Verify with a real deploy before relying on it.
 - **Empty change set does not associate** → A no-op push leaves `RoleARN` unset. Mitigation: perform the association as part of a real change and verify with `describe-stacks`; document that association is not a standalone `update-stack`.
 - **Delete/rollback use the role** → A future `delete-stack` runs as the service role. Mitigation: D3 includes delete actions for every resource type.
-- **Service role policy is bound to current physical ARNs** → D3 scopes permissions to the existing physical identifiers (`.../TasksFunction-woOv7SWZ5JEV`, `.../TasksTable-15WCT1VKKIOF5`, `.../apis/3547pxd431`, `.../TasksFunctionRole-Up1QN910ZA0J`). If a future CloudFormation change causes a resource replacement, CloudFormation creates a new physical ARN that the policy does not cover, and the deployment can fail until `infra/ci/` is updated to include the new identifier. This is a deliberate consequence of least privilege, not a defect: the trade is a narrower, explicit policy in exchange for a pre-deployment policy update whenever a resource is replaced. Mitigation: treat resource replacements as a coordinated change that updates `infra/ci/` first; broaden the ARN patterns (for example to `tasks-api-TasksTable-*`) only if replacements become routine.
+- **Service role policy is bound to current physical ARNs** → D3 scopes permissions to the existing physical identifiers (`.../TasksFunction-<suffix>`, `.../TasksTable-<suffix>`, `.../apis/YOUR_API_ID`, `.../TasksFunctionRole-<suffix>`). If a future CloudFormation change causes a resource replacement, CloudFormation creates a new physical ARN that the policy does not cover, and the deployment can fail until `infra/ci/` is updated to include the new identifier. This is a deliberate consequence of least privilege, not a defect: the trade is a narrower, explicit policy in exchange for a pre-deployment policy update whenever a resource is replaced. Mitigation: treat resource replacements as a coordinated change that updates `infra/ci/` first; broaden the ARN patterns (for example to `tasks-api-TasksTable-*`) only if replacements become routine.
 - **Bootstrap stack loss** → Losing the SAM-managed bucket/stack is not self-healing. Mitigation: accepted; re-bootstrap manually (documented), not an application concern.
 
 ## Migration Plan
 
 1. Add `infra/ci/` CloudFormation template defining the service role (D3) and the CI identity policy (D4).
 2. Bootstrap-deploy `infra/ci/` once with an admin profile.
-3. Add `role_arn = "arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole"` to `[default.deploy.parameters]` in `samconfig.toml`; commit.
+3. Add `role_arn = "arn:aws:iam::YOUR_ACCOUNT_ID:role/TasksApiCloudFormationServiceRole"` to `[default.deploy.parameters]` in `samconfig.toml`; commit.
 4. Update `GitHubActionsTasksApiRole`: attach the scoped policy, then detach `PowerUserAccess` and delete `TasksApiReadExecutionRole`.
 5. Run a deploy with a real template or code change; this associates the service role.
 6. Verify: `describe-stacks` reports the service role as `RoleARN`; CloudTrail shows resource operations performed under the service role; an out-of-scope call as CI (e.g. direct DynamoDB write) is denied.

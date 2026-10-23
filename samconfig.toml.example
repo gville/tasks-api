@@ -1,0 +1,12 @@
+version = 0.1
+
+# Example configuration only. Copy this file to samconfig.toml (or pass it with
+# --config-file) and replace every placeholder before deploying. The service
+# role must exist before it can be used; see the deployment notes in README.md.
+[default.deploy.parameters]
+stack_name = "tasks-api"
+region = "YOUR_AWS_REGION"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+role_arn = "arn:aws:iam::YOUR_ACCOUNT_ID:role/TasksApiCloudFormationServiceRole"

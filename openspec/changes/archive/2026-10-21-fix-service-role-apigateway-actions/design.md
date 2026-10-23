@@ -1,17 +1,21 @@
 # Design: fix-service-role-apigateway-actions
 
+> Note: account, API, role, table, bucket, and profile identifiers were replaced
+> with placeholders when preparing this repository for a portfolio. The technical
+> content and historical decisions are unchanged.
+
 ## Context
 
 See `proposal.md` for motivation. Current state verified against the live account
-(region `us-east-2`, account `524547833731`) on 2026-10-21 with read-only commands:
+(region `us-east-2`, account `YOUR_ACCOUNT_ID`) on 2026-10-21 with read-only commands:
 
 - The `ApiGatewayV2` statement of `TasksApiCloudFormationServiceRole` (inline policy
   `TasksApiCloudFormationServiceRolePolicy`; no managed policy attached) lists
   `apigatewayv2:CreateApi`, `apigatewayv2:UpdateApi`, `apigatewayv2:GetApi`,
   `apigatewayv2:DeleteApi`, `apigatewayv2:CreateStage`, `apigatewayv2:UpdateStage`,
   `apigatewayv2:GetStage`, `apigatewayv2:DeleteStage`, `apigatewayv2:TagResource` and
-  `apigatewayv2:UntagResource`, on `arn:aws:apigateway:us-east-2::/apis/3547pxd431`
-  and `arn:aws:apigateway:us-east-2::/apis/3547pxd431/stages/*`.
+  `apigatewayv2:UntagResource`, on `arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID`
+  and `arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID/stages/*`.
 - IAM has no `apigatewayv2` service prefix. API Gateway Management V2 is authorized
   under `apigateway` with HTTP-verb action names, and the SDK operation names are not
   actions either. The statement therefore matches no request and grants nothing.
@@ -20,7 +24,7 @@ See `proposal.md` for motivation. Current state verified against the live accoun
   evaluates to `allowed` for the administrator identity that bootstrapped the stack.
 - The failed update (`tasks-api` → `UPDATE_ROLLBACK_COMPLETE`, 2026-10-21) failed on
   `ServerlessHttpApi` with `apigateway:PUT` denied on
-  `arn:aws:apigateway:us-east-2::/apis/3547pxd431`. `TasksFunction` in the same
+  `arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID`. `TasksFunction` in the same
   change set updated successfully, so the other statements of the role do work.
 - The API is defined entirely by its OpenAPI `Body`: the paths and the Cognito JWT
   `securityScheme` live there. The stack has no `AWS::ApiGatewayV2::Route`,
