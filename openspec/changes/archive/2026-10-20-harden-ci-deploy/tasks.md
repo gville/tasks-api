@@ -1,10 +1,14 @@
 # Tasks
 
+> Note: account, API, role, table, bucket, and profile identifiers were replaced
+> with placeholders when preparing this repository for a portfolio. The technical
+> content and historical decisions are unchanged.
+
 ## 1. Author the versioned deployment configuration
 
 - [x] 1.1 Create the `infra/ci/` CloudFormation template defining `TasksApiCloudFormationServiceRole` with the `cloudformation.amazonaws.com` trust policy and the resource-scoped permission policy from design D3; verify it passes `aws cloudformation validate-template` (and `sam validate --template infra/ci/template.yaml` if SAM renders it)
 - [x] 1.2 Define the `GitHubActionsTasksApiRole` scoped permission policy from design D4 in the same stack (as a managed policy to attach); verify the rendered JSON has no `PowerUserAccess` reference and every statement targets the `tasks-api*` stack, the artifact bucket, or the service role
-- [x] 1.3 Add `role_arn = "arn:aws:iam::524547833731:role/TasksApiCloudFormationServiceRole"` under `[default.deploy.parameters]` in `samconfig.toml`; verify it is present and `sam deploy --help` confirms the flag is honored from config
+- [x] 1.3 Add `role_arn = "arn:aws:iam::YOUR_ACCOUNT_ID:role/TasksApiCloudFormationServiceRole"` under `[default.deploy.parameters]` in `samconfig.toml`; verify it is present and `sam deploy --help` confirms the flag is honored from config
 - [x] 1.4 Document the bootstrap boundary (OIDC provider and `infra/ci/` are deployed once by a human; the SAM-managed artifact bucket is not self-healing) in `AGENTS.md`; verify the described command matches the one in task 2.1
 
 ## 2. Bootstrap the roles

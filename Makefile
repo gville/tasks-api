@@ -1,4 +1,6 @@
-AWS_PROFILE ?= process
+AWS_PROFILE ?= default
+
+export AWS_PROFILE
 
 .PHONY: build test deploy local
 
@@ -8,7 +10,7 @@ build:
 test:
 	go test ./...
 
-deploy:
+deploy: build
 	sam deploy --profile $(AWS_PROFILE)
 
 local:

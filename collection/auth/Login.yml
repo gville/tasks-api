@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: https://cognito-idp.us-east-2.amazonaws.com/
+  url: "https://cognito-idp.{{region}}.amazonaws.com/"
   headers:
     - name: Content-Type
       value: application/x-amz-json-1.1
@@ -16,7 +16,7 @@ http:
     data: |-
       {
         "AuthFlow": "USER_PASSWORD_AUTH",
-        "ClientId": "3lefbjuklks9bbd9m3k0piclg3",
+        "ClientId": "{{clientId}}",
         "AuthParameters": {
           "USERNAME": "{{username}}",
           "PASSWORD": "{{password}}"

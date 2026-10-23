@@ -8,7 +8,7 @@ http:
   url: "{{baseUrl}}/tasks/:id"
   params:
     - name: id
-      value: 01M3Z09VJ32CKJATNGNR2M2BW4
+      value: "{{taskId}}"
       type: path
   body:
     type: json

@@ -28,6 +28,19 @@ bootstrap
 
 env.json
 
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.aws/
+credentials
+
+# Local deployment and client configuration (keep examples versioned)
+samconfig.local.toml
+collection/environments/*.local.yml
+
 # AI tool configs (local only; regenerate with `openspec update`)
 .opencode/
 .claude/

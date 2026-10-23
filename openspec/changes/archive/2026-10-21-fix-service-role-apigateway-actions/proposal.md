@@ -1,5 +1,9 @@
 # Proposal: fix-service-role-apigateway-actions
 
+> Note: account, API, role, table, bucket, and profile identifiers were replaced
+> with placeholders when preparing this repository for a portfolio. The technical
+> content and historical decisions are unchanged.
+
 ## Why
 
 The `ApiGatewayV2` statement of the CloudFormation service role grants IAM actions that
@@ -10,7 +14,7 @@ there is no `apigatewayv2` service prefix, and `apigateway:UpdateApi` is not an 
 either. IAM accepts such a policy without any error but never matches a request, so the
 statement grants nothing and the service role is denied every API Gateway operation.
 The pending deploy that adds the `PATCH /tasks/{id}` route failed on `apigateway:PUT`
-against `arn:aws:apigateway:us-east-2::/apis/3547pxd431` and left the `tasks-api` stack
+against `arn:aws:apigateway:us-east-2::/apis/YOUR_API_ID` and left the `tasks-api` stack
 in `UPDATE_ROLLBACK_COMPLETE`.
 
 ## What changes

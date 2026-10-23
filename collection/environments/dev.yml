@@ -1,11 +1,17 @@
 name: dev
 variables:
   - name: baseUrl
-    value: https://3547pxd431.execute-api.us-east-2.amazonaws.com
-    description: ""
+    value: YOUR_API_URL
+    description: Base URL of the deployed HTTP API
+  - name: region
+    value: YOUR_AWS_REGION
+    description: AWS region of the Cognito user pool
   - name: clientId
-    value: 3lefbjuklks9bbd9m3k0piclg3
-    description: ""
+    value: YOUR_COGNITO_CLIENT_ID
+    description: Cognito app client ID
+  - name: taskId
+    value: YOUR_TASK_ID
+    description: ULID of an existing task
   - secret: true
     name: username
   - secret: true
